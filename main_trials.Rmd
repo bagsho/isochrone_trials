@@ -1,0 +1,152 @@
+---
+title: "IsoChrone Trials"
+author: "Orhan Aktas"
+date: '2022-08-16'
+output:   
+    html_document:
+      df_print: !expr knitr::kable
+      toc: yes
+      number_sections: yes
+      toc_depth: 2
+---
+
+```{r setup, include=FALSE,echo=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  class.source = "bg-warning text-warning"
+)
+```
+
+#### Required Libraries {.unlisted .unnumbered}
+
+```{r libraries, message=FALSE, warning=FALSE}
+library(osrm)
+library(sf)
+library(tidyverse)
+library(leaflet)
+```
+
+# Introduction
+
+This root code is taken from this [link](https://gis.stackexchange.com/questions/347807/using-osrm-to-create-isochrones-in-r-potentially-problematic-at-10-minutes-dri).
+
+## create locations data
+
+first I want to add only one station.
+
+```{r}
+locations <- tibble::tribble(
+  ~place,       ~lon,     ~lat,
+  "Erenköy", 29.076372484549257, 40.971632584204116)
+```
+
+then I will add the second and work on scaling. Here is the second stations data.
+
+`"Göztepe",29.065281554810728,40.97964287391979`
+
+## Create isochrones
+
+isochrones can be created for drive (default), bike and walk.
+
+### isochrones for walking
+
+only for two isochrones. 5 min and 10 min. In this map, there is a problem with the areas. There are some holes in them.
+
+```{r}
+iso <- osrmIsochrone(loc = c(locations$lon, locations$lat), 
+                     breaks = seq(from = 0,to = 10, by = 5),
+                     res=40,
+                     osrm.profile="foot")
+
+iso$drive_times <- factor(paste(iso$min, "to", iso$max, "min"))
+
+factpal <- colorFactor("RdYlBu", iso$drive_times)
+
+leaflet() %>%
+  setView(mean(locations$lon), mean(locations$lat), zoom = 7) %>% 
+  addMarkers(lng = locations$lon, lat=locations$lat) %>% 
+  addProviderTiles("CartoDB.Positron", group="Greyscale") %>% 
+  addPolygons(fill=TRUE, stroke=TRUE, color = "black",
+              fillColor = ~factpal(iso$drive_times),
+              weight=0.5, fillOpacity=0.2,
+              data = iso, popup = iso$drive_times,
+              group = "Drive Time") %>%
+  addLegend("bottomright", pal = factpal, values = iso$drive_time,   title = "Drive Time")
+```
+
+And this is for four isochrones.
+
+```{r}
+iso <- osrmIsochrone(loc = c(locations$lon, locations$lat), 
+                     breaks = seq(from = 0,to = 20, by = 5),
+                     res=40,
+                     osrm.profile="foot")
+
+iso$drive_times <- factor(paste(iso$min, "to", iso$max, "min"))
+
+factpal <- colorFactor("RdYlBu", iso$drive_times)
+
+leaflet() %>%
+  setView(mean(locations$lon), mean(locations$lat), zoom = 7) %>% 
+  addMarkers(lng = locations$lon, lat=locations$lat) %>% 
+  addProviderTiles("CartoDB.Positron", group="Greyscale") %>% 
+  addPolygons(fill=TRUE, stroke=TRUE, color = "black",
+              fillColor = ~factpal(iso$drive_times),
+              weight=0.5, fillOpacity=0.2,
+              data = iso, popup = iso$drive_times,
+              group = "Drive Time") %>%
+  addLegend("bottomright", pal = factpal, values = iso$drive_time,   title = "Drive Time")
+```
+
+### isochrones for cycling
+
+only for two isochrones. 5 min and 10 min.
+
+```{r}
+iso <- osrmIsochrone(loc = c(locations$lon, locations$lat), 
+                     breaks = seq(from = 0,to = 10, by = 5),
+                     res=40,
+                     osrm.profile="bike")
+
+iso$drive_times <- factor(paste(iso$min, "to", iso$max, "min"))
+
+factpal <- colorFactor("RdYlBu", iso$drive_times)
+
+leaflet() %>%
+  setView(mean(locations$lon), mean(locations$lat), zoom = 7) %>% 
+  addMarkers(lng = locations$lon, lat=locations$lat) %>% 
+  addProviderTiles("CartoDB.Positron", group="Greyscale") %>% 
+  addPolygons(fill=TRUE, stroke=TRUE, color = "black",
+              fillColor = ~factpal(iso$drive_times),
+              weight=0.5, fillOpacity=0.2,
+              data = iso, popup = iso$drive_times,
+              group = "Drive Time") %>%
+  addLegend("bottomright", pal = factpal, values = iso$drive_time,   title = "Drive Time")
+```
+
+### isochrones for driving
+
+only for two isochrones. 5 min and 10 min. There is a problem with the location data in this map.
+
+```{r}
+iso <- osrmIsochrone(loc = c(locations$lon, locations$lat), 
+                     breaks = seq(from = 0,to = 10, by = 5),
+                     res=40)
+
+iso$drive_times <- factor(paste(iso$min, "to", iso$max, "min"))
+
+factpal <- colorFactor("RdYlBu", iso$drive_times)
+
+leaflet() %>%
+  setView(mean(locations$lon), mean(locations$lat), zoom = 7) %>% 
+  addMarkers(lng = locations$lon, lat=locations$lat) %>% 
+  addProviderTiles("CartoDB.Positron", group="Greyscale") %>% 
+  addPolygons(fill=TRUE, stroke=TRUE, color = "black",
+              fillColor = ~factpal(iso$drive_times),
+              weight=0.5, fillOpacity=0.2,
+              data = iso, popup = iso$drive_times,
+              group = "Drive Time") %>%
+  addLegend("bottomright", pal = factpal, values = iso$drive_time,   title = "Drive Time")
+```
